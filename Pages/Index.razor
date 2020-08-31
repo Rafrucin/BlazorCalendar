@@ -1,0 +1,71 @@
+﻿@page "/"
+
+<header>
+
+ <h3 class="ms-fontSize-42 ms-fontWeight-regular">Welcome to Blazor Calendar</h3>
+ <p class="ms-fontSize-14 ms-fontWeight-regular">Blazor Calendar allows you to manage all your events within your Outlook Calendar</p>
+ 
+ <AuthorizeView> 
+  <NotAuthorized>
+    <p class="ms-fontSize-14 ms-fontWeight-regular">Please sign in with your Microsoft account to get started</p>
+    <a href="/authentication/login" class="microsoft-login-button shadow-effect"><img src="Assets/images/Microsoft.png" alt=""> Sign in with Microsoft</a>
+  </NotAuthorized>
+ </AuthorizeView>
+
+</header>
+
+<div class="row">
+ <!-- calendar -->
+ <div class="col-sm-12 col-md-12 col-lg-9">
+    <Calendar>
+        <DayTemplate Context="day">
+            @{
+              string currentDayClass = day.Date == DateTime.Now.Date? "current-day" : "";
+              string selectedDayClass = day == selectedDay ? "selected-day" : "";
+            }
+            @if (!day.IsEmpty)
+            {
+              <div class="day shadow-effect @currentDayClass @selectedDayClass" @onclick="()=>selectedDay=day">
+              <h3 class="ms-fontsize-24 ms-fontweight-regular">@day.DayNumber</h3>
+              @if(day.Events != null && day.Events.Count!=0)
+              {
+                var firstEvent = day.Events.FirstOrDefault();
+                <div class="day-event @firstEvent.Color">
+                  @if(firstEvent.Subject.Length>25) 
+                  {  
+                    @firstEvent.Subject.Substring(0,25)<texr>...</texr>
+                  }
+                  else
+                  {
+                    @firstEvent.Subject
+                  }
+                  </div>
+              }
+              </div>
+            }
+
+        </DayTemplate>
+    </Calendar>
+ </div>
+
+ <div class="col-sm-12 col-md-12 col-lg-3">
+   <AddEvent SelectedDay="selectedDay"/>
+
+   <EventsList SelectedDay="selectedDay"/>
+ </div>
+ </div>
+
+ @code {
+
+       protected override void OnInitialized()
+    {
+        AddEvent.OnEventAdded+=()=>
+        {
+            StateHasChanged();
+        };
+    }
+   private CalendarDay selectedDay = new CalendarDay()
+   {
+      Date=DateTime.Now
+   };
+ }

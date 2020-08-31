@@ -1,0 +1,179 @@
+@inject ICalendarEventsProvider _eventsProvider
+
+<div class="calendar">
+ <div class="row">
+  <div class="col-sm-12 col-lg-2">
+   <select name="" id="" class="fluent-input" @onchange="SelectYear">
+     <option selected="selected" value="@currentYear">Current Year</option>      
+@for (int i = 2015; i < 2025; i++)
+{    
+    <option >@i</option>
+}
+   </select>
+  </div>
+   <div class="col-sm-12 col-lg-2">
+   <select name="" id="" class="fluent-input" @onchange="SelectMonth">
+    <option selected="selected" value="@currentMonth">Current Month</option> 
+    <option value="1" >Jan</option>
+    <option value="2" >Feb</option>
+    <option value="3">Mar</option>
+    <option value="4">Apr</option>
+    <option value="5">May</option>
+    <option value="6">Jun</option>
+    <option value="7">Jul</option>
+    <option value="8">Aug</option>
+    <option value="9">Sep</option>
+    <option value="10">Oct</option>
+    <option value="11">Nov</option>
+    <option value="12">Dec</option>
+   </select>
+  </div>
+ </div>
+<table class="calendar-table">
+ <thead>
+  <tr>
+   <td>Sun</td>
+   <td>Mon</td>
+   <td>Tue</td>
+   <td>Wed</td>
+   <td>Thu</td>
+   <td>Fri</td>
+   <td>Sat</td>
+  </tr>
+ </thead>
+ <tbody>
+   @for (int r = 0; r < rowsCount; r++)
+   {
+       <tr>
+         @foreach (var item in days.Skip(r * 7).Take(7))
+         {
+            <td>
+              @DayTemplate(item)
+            </td> 
+         }
+       </tr>
+   }
+ </tbody>
+</table>
+ </div>
+
+
+@code
+{
+  [Parameter]
+  public RenderFragment<CalendarDay> DayTemplate { get; set; }
+
+  private int year;
+  private int currentYear;
+  private int month;
+  private int currentMonth;
+
+  private List<CalendarDay> days = new List<CalendarDay>();
+  private int rowsCount = 0;
+
+  protected async override Task OnInitializedAsync()
+  {
+    year = DateTime.Now.Year;
+    currentYear = DateTime.Now.Year;
+    month = DateTime.Now.Month;
+    currentMonth = DateTime.Now.Month;
+    await UpdateCalendar();
+  }
+  async Task SelectYear(ChangeEventArgs e)
+  {
+   year = Convert.ToInt32(e.Value.ToString());
+   //Refresh calendar
+   await UpdateCalendar();
+  }
+
+  async Task SelectMonth(ChangeEventArgs e)
+  {
+   month = Convert.ToInt32(e.Value.ToString());
+   //Refresh Calendar
+   await UpdateCalendar();
+  }
+
+  async Task UpdateCalendar()
+  {
+   days = new List<CalendarDay>();
+   //calculate empty days
+   var firstDayDate = new DateTime(year, month, 1);
+   int weekDayNumber = (int)firstDayDate.DayOfWeek;
+   int numberOfEmptyDays = 0;
+   if (weekDayNumber == 7)//Sunday
+   {
+  numberOfEmptyDays = 0;
+   }
+   else
+   {
+  numberOfEmptyDays = weekDayNumber;
+   }
+
+   // add empty days
+   for (int i = 0; i < numberOfEmptyDays; i++)
+   {
+  days.Add(new CalendarDay
+  {
+   DayNumber = 0,
+   IsEmpty = true
+  });
+   }
+   // add month days
+   int numberOfDaysInMonth = DateTime.DaysInMonth(year, month);
+   for (int i = 0; i < numberOfDaysInMonth; i++)
+   {
+  days.Add(new CalendarDay
+  {
+   DayNumber = i + 1,
+   IsEmpty = false,
+   Date = new DateTime(year, month, i + 1),
+   Events = new List<CalendarEvent>()
+  });
+   }
+   // calculate nimenr of rows
+   int remaning = days.Count % 7;
+   if (remaning == 0)
+   {
+    rowsCount = days.Count / 7;
+   }
+   else
+   {
+    rowsCount = Convert.ToInt32(days.Count / 7) + 1;
+   }
+   await SyncEventsFromExternalProviderToCalendar();
+   Console.WriteLine($"Total Rows: {rowsCount} | Number of Empty Days {numberOfEmptyDays} | Month Days {numberOfDaysInMonth}");
+
+
+  }
+
+  async Task SyncEventsFromExternalProviderToCalendar()
+  {
+// fetch the events for the month 
+        var events = await _eventsProvider.GetEventsInMonthAsync(year, month);
+
+        if(events == null || events.Count() == 0)
+            return; 
+
+        foreach (var day in days)
+        {
+            if (day.IsEmpty)
+                continue;
+
+            var eventsInDay = events.Where(e => e.StartDate.Date <= day.Date && e.EndDate.Date >= day.Date);
+            if (eventsInDay.Any())
+            {
+                day.Events.AddRange(eventsInDay);
+            }
+        }
+  }
+}
+
+
+
+
+
+
+
+
+
+
