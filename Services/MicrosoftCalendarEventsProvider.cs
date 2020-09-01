@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BlazorCalendar.Models;
@@ -23,6 +24,47 @@ namespace BlazorCalendar.Services
     _accessTokenProvider = accessToken;
     _httpClient = httpClient;
   }
+
+      public async Task AddEventAsync(CalendarEvent calendarEvent)
+      {
+ // 1- Get Token 
+            var accessToken = await GetAccessTokenAsync();
+            if(accessToken == null)
+            {
+                Console.WriteLine("Access Token is not available");
+                return;
+            }
+
+            // 2- Set the access token in the authorization header 
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", accessToken);
+
+            // 3- Initialize the content of the post request 
+            string eventAsJson = JsonConvert.SerializeObject(new MicrosoftGraphEvent
+            {
+                Subject = calendarEvent.Subject,
+                Start = new DateTimeTimeZone 
+                {
+                    DateTime = calendarEvent.StartDate.ToString(new CultureInfo("en-US")),
+                    TimeZone = TimeZoneInfo.Local.Id
+                },
+                End = new DateTimeTimeZone 
+                {
+                    DateTime = calendarEvent.EndDate.ToString(new CultureInfo("en-US")),
+                    TimeZone = TimeZoneInfo.Local.Id,
+                }
+            });
+
+            var content = new StringContent(eventAsJson);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json"); 
+
+            // Send the request
+            var response = await _httpClient.PostAsync(Base_URL, content);
+
+            if(response.IsSuccessStatusCode)
+                Console.WriteLine("Event has been added successfully!");
+            else
+                Console.WriteLine(response.StatusCode);
+      }
      public async Task<IEnumerable<CalendarEvent>> GetEventsInMonthAsync(int year, int month)
      {
        // 1- Get Token 

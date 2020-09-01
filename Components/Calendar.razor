@@ -1,8 +1,8 @@
 @inject ICalendarEventsProvider _eventsProvider
 
 <div class="calendar">
- <div class="row">
-  <div class="col-sm-12 col-lg-2">
+ <div class="row ml-1">
+  <div class="col-sm-6 col-lg-2">
    <select name="" id="" class="fluent-input" @onchange="SelectYear">
      <option selected="selected" value="@currentYear">Current Year</option>      
 @for (int i = 2015; i < 2025; i++)
@@ -11,7 +11,7 @@
 }
    </select>
   </div>
-   <div class="col-sm-12 col-lg-2">
+   <div class="col-sm-6 col-lg-2">
    <select name="" id="" class="fluent-input" @onchange="SelectMonth">
     <option selected="selected" value="@currentMonth">Current Month</option> 
     <option value="1" >Jan</option>
